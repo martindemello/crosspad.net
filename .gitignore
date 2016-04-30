@@ -1,0 +1,7 @@
+build
+deploy
+packages
+.fake
+.paket
+src/crosspad/bin
+src/crosspad/obj
