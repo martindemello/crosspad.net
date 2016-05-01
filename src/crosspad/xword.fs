@@ -70,16 +70,60 @@ type state = {
 
 // xword manipulation
 
-let setLetter (xword : xword) (cursor : Cursor) (letter : string) =
+let setLetter (xw : xword) (cursor : Cursor) (letter : string) =
   let row, col = cursor.Y, cursor.X
-  xword.grid.[row, col] <- 
-    { xword.grid.[row, col] with cell = Letter letter }
+  xw.grid.[row, col] <- 
+    { xw.grid.[row, col] with cell = Letter letter }
   
-let toggleBlack (xword : xword) (cursor : Cursor) =
+let toggleBlack (xw : xword) (cursor : Cursor) =
   let row, col = cursor.Y, cursor.X
-  let cell = xword.grid.[row, col].cell
-  xword.grid.[row, col] <- 
+  let cell = xw.grid.[row, col].cell
+  xw.grid.[row, col] <- 
     match cell with
-    | Black -> { xword.grid.[row, col] with cell = Empty }
-    | Empty -> { xword.grid.[row, col] with cell = Black }
-    | _ -> xword.grid.[row, col]
+    | Black -> { xw.grid.[row, col] with cell = Empty }
+    | Empty -> { xw.grid.[row, col] with cell = Black }
+    | _ -> xw.grid.[row, col]
+
+// numbering
+
+let isBlack xw x y = xw.grid.[y, x].cell = Black
+
+let boundary xw x y =
+  (x < 0) || (y < 0) ||
+  (x >= xw.cols) || (y >= xw.rows) ||
+  isBlack xw x y
+
+let nonBoundary xw x y = not (boundary xw x y)
+
+let startAcross xw x y =
+  (boundary xw (x - 1) y) &&
+  (nonBoundary xw x y) &&
+  (nonBoundary xw (x + 1) y)
+
+let startDown xw x y =
+  (boundary xw x (y - 1)) &&
+  (nonBoundary xw x y) &&
+  (nonBoundary xw x (y + 1))
+
+let setNum xw x y n =
+  xw.grid.[y, x] <- 
+    { xw.grid.[y, x] with num = n }
+
+let renumberWithCallbacks on_ac on_dn xw =
+  let n = ref 1 in
+  for y = 0 to xw.rows - 1 do
+    for x = 0 to xw.cols - 1 do
+      let a, d = startAcross xw x y, startDown xw x y in
+      if a then on_ac !n
+      if d then on_dn !n
+      if (a || d) then begin
+        setNum xw x y !n
+        n := !n + 1
+      end
+      else
+        setNum xw x y 0
+    done
+  done
+
+let renumber xw =
+  renumberWithCallbacks ignore ignore xw

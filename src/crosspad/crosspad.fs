@@ -20,6 +20,7 @@ let main argv =
   grid.[1, 2] <- { cell = Black; num = 1 }
   grid.[1, 1] <- { cell = Letter "H"; num = 2 }
   grid.[2, 1] <- { cell = Letter "E"; num = 3 }
+  renumber xw
 
   let blackBrush = new SolidBrush(Colors.Black)
   let whiteBrush = new SolidBrush(Colors.White)
