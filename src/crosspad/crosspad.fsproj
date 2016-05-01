@@ -47,6 +47,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="xword.fs" />
     <Compile Include="crosspad.fs" />
     <None Include="App.config" />
   </ItemGroup>
