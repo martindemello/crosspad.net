@@ -34,10 +34,10 @@ type Cursor(xmax: int, ymax: int) =
     n
 
   let pin(n, max) =
-    if n < 0 then 0 else if n >= max then max - 1 else x
+    if n < 0 then 0 else if n > max then max else x
 
   let cycle(n, max) =
-    (n + max) % max
+    (n + max + 1) % (max + 1)
 
   let delta = function
     | Move_Left -> (-1, 0)
@@ -55,6 +55,9 @@ type Cursor(xmax: int, ymax: int) =
   member this.Y
     with get() = y
     and set(y') = y <- checkBounds(y', ymax)
+
+  member this.IsSymmetric(x, y) =
+    x = xmax - this.X && y = ymax - this.Y
 
   member this.Move(dir : cursor_movement, ?wrap : bool) =
     let wrap = defaultArg wrap true
@@ -85,6 +88,7 @@ let toggleBlack (xw : xword) (cursor : Cursor) =
     | _ -> xw.grid.[row, col]
 
 // numbering
+// this section uses (x, y) coordinates for convenience.
 
 let isBlack xw x y = xw.grid.[y, x].cell = Black
 

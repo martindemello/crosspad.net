@@ -14,7 +14,7 @@ let main argv =
 
   let grid = Array2D.create rows cols { cell = Empty; num = 0 }
   let xw = { rows = rows; cols = cols; grid = grid }
-  let cursor = new Cursor(xw.cols, xw.rows)
+  let cursor = new Cursor(xw.cols - 1, xw.rows - 1)
   let state = { xword = xw; cursor = cursor }
 
   grid.[1, 2] <- { cell = Black; num = 1 }
@@ -26,6 +26,8 @@ let main argv =
   let whiteBrush = new SolidBrush(Colors.White)
   let cursorBlackBrush = new SolidBrush(Colors.DarkGreen)
   let cursorWhiteBrush = new SolidBrush(Colors.LightGreen)
+  let cursorSymBlackBrush = new SolidBrush(Colors.DarkSeaGreen)
+  let cursorSymWhiteBrush = new SolidBrush(Colors.LightSeaGreen)
   let arial = new FontFamily("Arial")
   let letterFont = new Font(arial, 14.f)
   let numberFont = new Font(arial, 6.f)
@@ -48,11 +50,14 @@ let main argv =
 
   let cellBg (row : int) (col : int) (cursor : Cursor) (cell : cell) =
     let is_cursor = row = cursor.Y && col = cursor.X
-    match cell, is_cursor with
-    | Black, true -> cursorBlackBrush
-    | Black, false -> blackBrush
-    | _, true -> cursorWhiteBrush
-    | _, false -> whiteBrush
+    let is_sym_cursor = cursor.IsSymmetric(col, row)
+    match cell, is_cursor, is_sym_cursor with
+    | Black, true, _ -> cursorBlackBrush
+    | Black, _, true -> cursorSymBlackBrush
+    | Black, _, _ -> blackBrush
+    | _, true, _ -> cursorWhiteBrush
+    | _, _,true -> cursorSymWhiteBrush
+    | _, _, _ -> whiteBrush
 
   d.Paint.Add(fun e ->
     let g = e.Graphics
