@@ -1,8 +1,22 @@
 NUGET
   remote: https://www.nuget.org/api/v2
   specs:
-    Eto.Forms (2.2.0)
-    Eto.Platform.Gtk3 (2.2.0)
-      Eto.Forms (2.2.0)
+    cairo (1.12.18)
+      cairo.redist (>= 1.12.18)
+      lpng (>= 1.6.16)
+      zlib (>= 1.2.8.7)
+    cairo.redist (1.12.18)
+    Eto.Forms (2.2)
+    Eto.Platform.Gtk3 (2.2)
+      Eto.Forms (2.2)
     FAKE (4.25.5)
     GtkSharp (3.1.3)
+    lpng (1.6.16)
+      lpng.redist (>= 1.6.16)
+      zlib (>= 1.2.8.7)
+    lpng.redist (1.6.16)
+    zlib (1.2.8.8)
+      zlib.v120.windesktop.msvcstl.dyn.rt-dyn (1.2.8.8) - framework: native
+      zlib.v140.windesktop.msvcstl.dyn.rt-dyn (1.2.8.8) - framework: native
+    zlib.v120.windesktop.msvcstl.dyn.rt-dyn (1.2.8.8) - framework: native
+    zlib.v140.windesktop.msvcstl.dyn.rt-dyn (1.2.8.8) - framework: native

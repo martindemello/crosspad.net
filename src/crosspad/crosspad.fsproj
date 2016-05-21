@@ -48,6 +48,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="xword.fs" />
+    <Compile Include="etogui.fs" />
+    <Compile Include="gtkgui.fs" />
     <Compile Include="crosspad.fs" />
     <None Include="App.config" />
   </ItemGroup>
@@ -67,6 +69,41 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
+  <Choose>
+    <When Condition="true">
+      <PropertyGroup>
+        <__paket__lpng_redist_targets>native\lpng.redist</__paket__lpng_redist_targets>
+      </PropertyGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="true">
+      <PropertyGroup>
+        <__paket__lpng_targets>native\lpng</__paket__lpng_targets>
+      </PropertyGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.6.2')">
+      <PropertyGroup>
+        <__paket__GtkSharp_targets>net45\GtkSharp</__paket__GtkSharp_targets>
+      </PropertyGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="true">
+      <PropertyGroup>
+        <__paket__cairo_redist_targets>native\cairo.redist</__paket__cairo_redist_targets>
+      </PropertyGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="true">
+      <PropertyGroup>
+        <__paket__cairo_targets>native\cairo</__paket__cairo_targets>
+      </PropertyGroup>
+    </When>
+  </Choose>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
@@ -84,7 +121,7 @@
         </Reference>
       </ItemGroup>
     </When>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1')">
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.6.2')">
       <ItemGroup>
         <Reference Include="Eto">
           <HintPath>..\..\packages\Eto.Forms\lib\net45\Eto.dll</HintPath>
@@ -113,7 +150,7 @@
         </Reference>
       </ItemGroup>
     </When>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1')">
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.6.2')">
       <ItemGroup>
         <Reference Include="Eto.Gtk3">
           <HintPath>..\..\packages\Eto.Platform.Gtk3\lib\net45\Eto.Gtk3.dll</HintPath>
@@ -124,14 +161,7 @@
     </When>
   </Choose>
   <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1')">
-      <PropertyGroup>
-        <__paket__GtkSharp_targets>net45\GtkSharp</__paket__GtkSharp_targets>
-      </PropertyGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1')">
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.6.2')">
       <ItemGroup>
         <Reference Include="atk-sharp">
           <HintPath>..\..\packages\GtkSharp\lib\net45\atk-sharp.dll</HintPath>
@@ -171,5 +201,123 @@
       </ItemGroup>
     </When>
   </Choose>
+  <Choose>
+    <When Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      <ItemGroup>
+        <NativeReference Include="zlibd">
+          <HintPath>..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\lib\native\v120\windesktop\msvcstl\dyn\rt-dyn\x64\Debug\zlibd.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      <ItemGroup>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\lib\native\v120\windesktop\msvcstl\dyn\rt-dyn\x64\Release\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+      </ItemGroup>
+    </When>
+    <When Condition="true">
+      <ItemGroup>
+        <NativeReference Include="zlibd">
+          <HintPath>..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\lib\native\v120\windesktop\msvcstl\dyn\rt-dyn\Win32\Debug\zlibd.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\lib\native\v120\windesktop\msvcstl\dyn\rt-dyn\Win32\MinSizeRel\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\lib\native\v120\windesktop\msvcstl\dyn\rt-dyn\Win32\RelWithDebInfo\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\lib\native\v120\windesktop\msvcstl\dyn\rt-dyn\Win32\Release\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\lib\native\v120\windesktop\msvcstl\dyn\rt-dyn\x64\MinSizeRel\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\lib\native\v120\windesktop\msvcstl\dyn\rt-dyn\x64\RelWithDebInfo\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      <ItemGroup>
+        <NativeReference Include="zlibd">
+          <HintPath>..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64\Debug\zlibd.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      <ItemGroup>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64\Release\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+      </ItemGroup>
+    </When>
+    <When Condition="true">
+      <ItemGroup>
+        <NativeReference Include="zlibd">
+          <HintPath>..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\Win32\Debug\zlibd.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\Win32\MinSizeRel\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\Win32\RelWithDebInfo\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\Win32\Release\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64\MinSizeRel\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+        <NativeReference Include="zlib">
+          <HintPath>..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\lib\native\v140\windesktop\msvcstl\dyn\rt-dyn\x64\RelWithDebInfo\zlib.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </NativeReference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Import Project="..\..\packages\cairo\build\$(__paket__cairo_targets).targets" Condition="Exists('..\..\packages\cairo\build\$(__paket__cairo_targets).targets')" Label="Paket" />
+  <Import Project="..\..\packages\cairo.redist\build\$(__paket__cairo_redist_targets).targets" Condition="Exists('..\..\packages\cairo.redist\build\$(__paket__cairo_redist_targets).targets')" Label="Paket" />
   <Import Project="..\..\packages\GtkSharp\build\$(__paket__GtkSharp_targets).targets" Condition="Exists('..\..\packages\GtkSharp\build\$(__paket__GtkSharp_targets).targets')" Label="Paket" />
+  <Import Project="..\..\packages\lpng\build\$(__paket__lpng_targets).targets" Condition="Exists('..\..\packages\lpng\build\$(__paket__lpng_targets).targets')" Label="Paket" />
+  <Import Project="..\..\packages\lpng.redist\build\$(__paket__lpng_redist_targets).targets" Condition="Exists('..\..\packages\lpng.redist\build\$(__paket__lpng_redist_targets).targets')" Label="Paket" />
+  <Import Project="..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.targets" Condition="Exists('..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.targets')" Label="Paket" />
+  <Import Project="..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.x64.targets" Condition="Exists('..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.x64.targets')" Label="Paket" />
+  <Import Project="..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets" Condition="Exists('..\..\packages\zlib.v120.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v120.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" Label="Paket" />
+  <Import Project="..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.targets" Condition="Exists('..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.targets')" Label="Paket" />
+  <Import Project="..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets" Condition="Exists('..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.x64.targets')" Label="Paket" />
+  <Import Project="..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets" Condition="Exists('..\..\packages\zlib.v140.windesktop.msvcstl.dyn.rt-dyn\build\native\zlib.v140.windesktop.msvcstl.dyn.rt-dyn.x86.targets')" Label="Paket" />
 </Project>
