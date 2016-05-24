@@ -19,14 +19,15 @@ type cursor_movement =
   | Move_Up
   | Move_Down
   | Move_Across
-  | Move_Bksp_Ac
-  | Move_Bksp_Dn
+
+type cursor_direction = Across | Down
 
 type Cursor(xmax: int, ymax: int) =
   let xmax = xmax
   let ymax = ymax
   let mutable x = 0
   let mutable y = 0
+  let mutable dir = Across
   
   let checkBounds(n, max) =
     if n > max || n < 0 then
@@ -34,7 +35,7 @@ type Cursor(xmax: int, ymax: int) =
     n
 
   let pin(n, max) =
-    if n < 0 then 0 else if n > max then max else x
+    if n < 0 then 0 else if n > max then max else n
 
   let cycle(n, max) =
     (n + max + 1) % (max + 1)
@@ -45,8 +46,6 @@ type Cursor(xmax: int, ymax: int) =
     | Move_Up -> (0, -1)
     | Move_Down -> (0, 1)
     | Move_Across -> (1, 0)
-    | Move_Bksp_Ac -> (-1, 0)
-    | Move_Bksp_Dn -> (0, -1)
 
   member this.X
     with get() = x
@@ -56,8 +55,23 @@ type Cursor(xmax: int, ymax: int) =
     with get() = y
     and set(y') = y <- checkBounds(y', ymax)
 
+  member this.Dir
+    with get() = dir
+    and set(dir') = dir <- dir'
+
+  member this.InBounds(x, y) =
+    x >= 0 && x <= xmax && y >= 0 && y <= ymax
+
+  member this.FlipDir() =
+    this.Dir <- match this.Dir with
+                | Across -> Down
+                | Down -> Across
+
+  member this.Symmetric() =
+    xmax - this.X, ymax - this.Y
+
   member this.IsSymmetric(x, y) =
-    x = xmax - this.X && y = ymax - this.Y
+    (x, y) = this.Symmetric()
 
   member this.Move(dir : cursor_movement, ?wrap : bool) =
     let wrap = defaultArg wrap true
@@ -66,26 +80,27 @@ type Cursor(xmax: int, ymax: int) =
     this.X <- fn(this.X + dx, xmax)
     this.Y <- fn(this.Y + dy, ymax)
 
+  member this.Advance() =
+    let d = match this.Dir with
+            | Across -> Move_Right
+            | Down -> Move_Down
+    this.Move(d, false)
+
+  member this.Backspace() =
+    let d = match this.Dir with
+            | Across -> Move_Left
+            | Down -> Move_Up
+    this.Move(d, false)
+
+  member this.MoveTo(x, y) =
+    if this.InBounds(x, y) then
+      this.X <- x
+      this.Y <- y
+
 type state = {
   xword : xword
   cursor : Cursor
 }
-
-// xword manipulation
-
-let setLetter (xw : xword) (cursor : Cursor) (letter : string) =
-  let row, col = cursor.Y, cursor.X
-  xw.grid.[row, col] <- 
-    { xw.grid.[row, col] with cell = Letter letter }
-  
-let toggleBlack (xw : xword) (cursor : Cursor) =
-  let row, col = cursor.Y, cursor.X
-  let cell = xw.grid.[row, col].cell
-  xw.grid.[row, col] <- 
-    match cell with
-    | Black -> { xw.grid.[row, col] with cell = Empty }
-    | Empty -> { xw.grid.[row, col] with cell = Black }
-    | _ -> xw.grid.[row, col]
 
 // numbering
 // this section uses (x, y) coordinates for convenience.
@@ -131,3 +146,39 @@ let renumberWithCallbacks on_ac on_dn xw =
 
 let renumber xw =
   renumberWithCallbacks ignore ignore xw
+
+// xword manipulation
+
+let isLetter xw x y =
+  match xw.grid.[y, x].cell with
+  | Letter _ -> true
+  | _ -> false
+
+let setCell xw x y c =
+  xw.grid.[y, x] <- { xw.grid.[y, x] with cell = c }
+
+// high-level functions called by the front end
+
+let setLetter (xw : xword) (cursor : Cursor) (letter : string) =
+  let row, col = cursor.Y, cursor.X
+  xw.grid.[row, col] <- 
+    { xw.grid.[row, col] with cell = Letter letter }
+  cursor.Advance()
+  
+let deleteLetter (xw : xword) (cursor : Cursor) (bksp : bool) =
+  if bksp then cursor.Backspace()
+  let row, col = cursor.Y, cursor.X
+  if isLetter xw col row then
+    setCell xw col row Empty
+
+let toggleBlack (xw : xword) (cursor : Cursor) =
+  let col, row = cursor.X, cursor.Y
+  let col', row' = cursor.Symmetric()
+  let cell = xw.grid.[row, col].cell
+  if not (isLetter xw col row || isLetter xw col' row') then
+    let cell' = match cell with Black -> Empty | _ -> Black
+    setCell xw col row cell'
+    setCell xw col' row' cell'
+    cursor.Advance()
+    renumber xw
+
