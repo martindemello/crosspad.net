@@ -24,7 +24,7 @@ type xword = {
   clues : clues
 }
 
-type cursor_movement = 
+type cursor_movement =
   | Move_Left
   | Move_Right
   | Move_Up
@@ -39,7 +39,7 @@ type Cursor(xmax: int, ymax: int) =
   let mutable x = 0
   let mutable y = 0
   let mutable dir = Across
-  
+
   let checkBounds(n, max) =
     if n > max || n < 0 then
       raise (new System.Exception("Cursor out of bounds"))
@@ -61,7 +61,7 @@ type Cursor(xmax: int, ymax: int) =
   member this.X
     with get() = x
     and set(x') = x <- checkBounds(x', xmax)
-  
+
   member this.Y
     with get() = y
     and set(y') = y <- checkBounds(y', ymax)
@@ -136,7 +136,7 @@ let startDown xw x y =
   (nonBoundary xw x (y + 1))
 
 let setNum xw x y n =
-  xw.grid.[y, x] <- 
+  xw.grid.[y, x] <-
     { xw.grid.[y, x] with num = n }
 
 let renumberWithCallbacks on_ac on_dn xw =
@@ -172,10 +172,10 @@ let setCell xw x y c =
 
 let setLetter (xw : xword) (cursor : Cursor) (letter : string) =
   let row, col = cursor.Y, cursor.X
-  xw.grid.[row, col] <- 
+  xw.grid.[row, col] <-
     { xw.grid.[row, col] with cell = Letter letter }
   cursor.Advance()
-  
+
 let deleteLetter (xw : xword) (cursor : Cursor) (bksp : bool) =
   if bksp then cursor.Backspace()
   let row, col = cursor.Y, cursor.X
