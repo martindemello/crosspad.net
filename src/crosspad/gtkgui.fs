@@ -103,86 +103,119 @@ let DrawCursor(cr : Cairo.Context, state) =
   cr.SetSourceColor(color)
   cr.Rectangle(x, y, w, h)
   cr.Fill()
-  
+
   let col', row' = state.cursor.Symmetric()
   let (x, y, w, h) = rectangle row' col'
   cr.SetSourceColor(dark_green_a)
   cr.Rectangle(x, y, w, h)
   cr.Fill()
 
-type MyWin(arg: String) =
+let DrawXword(cr : Cairo.Context, state) =
+  use target = cr.GetTarget ()
+  use grid = target.CreateSimilar (Content.ColorAlpha, width, height)
+  use cur = target.CreateSimilar (Content.ColorAlpha, width, height)
+  use cr_grid = new Context(grid)
+  DrawGrid(cr_grid, state)
+  cr.SetSourceSurface(grid, xoff, yoff)
+  cr.Paint ()
+  use cr_cur = new Context(cur)
+  DrawCursor(cr_cur, state)
+  cr.SetSourceSurface(cur, xoff, yoff)
+  cr.Paint ()
+
+// Clues
+type ClueWidget() as this =
   class
-    inherit Gtk.Window(arg)
+    inherit Gtk.VBox(true, 0)
 
-    let mutable on_key_fn = fun e -> true
+    let tree = new Gtk.TreeView()
+    let model = new Gtk.ListStore(typeof<string>, typeof<string>)
+    let clue_col = new Gtk.TreeViewColumn()
 
-    member this.OnKeyPress
-      with public get() = on_key_fn
-      and public set fn = on_key_fn <- fn
+    let make_column(title: string) =
+      let col = new Gtk.TreeViewColumn()
+      let renderer = new Gtk.CellRendererText ()
+      let index = tree.AppendColumn(col) - 1
+      col.Title <- title
+      col.PackStart (renderer, true);
+      col.AddAttribute (renderer, "text", index)
+      col
+
+    let init () =
+      let answer_col = make_column("Light")
+      let clue_col = make_column("Clue")
+      tree.Model <- model
+      this.PackStart(tree, true, true, 0u)
+      model.AppendValues("taliban", "42") |> ignore
+      model.AppendValues("foo", "bar") |> ignore
+
+    do init ()
+
+  end
+
+// Drawing area
+type XwordWidget(state) as this =
+  class
+    inherit Gtk.DrawingArea()
+
+    let state = state
+    let xw = state.xword
+    let cursor = state.cursor
+
+    let init () =
+      this.AddEvents(int(Gdk.EventMask.ButtonPressMask))
+      this.CanFocus <- true
+
+    do init ()
+
+    override this.OnDrawn(cr : Cairo.Context) =
+      DrawXword(cr, state)
+      true
 
     override this.OnKeyPressEvent(e : Gdk.EventKey) =
-      if this.OnKeyPress(e) then
-        base.OnKeyPressEvent(e)
-      else
-        false
+      let mutable handled = true
+      match e.Key with
+      | Gdk.Key.Up -> cursor.Move(Move_Up)
+      | Gdk.Key.Down -> cursor.Move(Move_Down)
+      | Gdk.Key.Left -> cursor.Move(Move_Left)
+      | Gdk.Key.Right -> cursor.Move(Move_Right)
+      | Gdk.Key.Page_Up | Gdk.Key.Next (* PgDn *) -> cursor.FlipDir()
+      | Gdk.Key.space -> toggleBlack xw cursor
+      | Gdk.Key.BackSpace -> deleteLetter xw cursor true
+      | Gdk.Key.Delete -> deleteLetter xw cursor false
+      | k when isAscii(k) -> setLetter xw cursor ((string k).ToUpper())
+      | _ -> Console.WriteLine(">> #{0}", e.Key); handled <- false
 
+      if handled then
+        this.QueueDraw()
+        true
+      else
+        base.OnKeyPressEvent(e)
+
+    override this.OnButtonPressEvent(e : Gdk.EventButton) =
+      let (row, col) = fromMouseCoords(e.X, e.Y)
+      cursor.MoveTo(col, row)
+      this.QueueDraw()
+      this.GrabFocus()
+      true
   end
 
 let Run (state) =
   Application.Init ()
- 
-  let cursor = state.cursor
-  let xw = state.xword
 
-  let window = new MyWin ("helloworld")
+  let window = new Gtk.Window("helloworld")
   window.SetDefaultSize(width, height)
   window.DeleteEvent.Add(fun e ->
     window.Hide()
     Application.Quit()
     e.RetVal <- true)
 
-  let drawing = new Gtk.DrawingArea () 
-  drawing.AddEvents(int(Gdk.EventMask.ButtonPressMask))
-
-  drawing.Drawn.Add(fun args ->
-    let cr = args.Cr
-    use target = cr.GetTarget ()
-    use grid = target.CreateSimilar (Content.ColorAlpha, width, height)
-    use cur = target.CreateSimilar (Content.ColorAlpha, width, height)
-    use cr_grid = new Context(grid)
-    DrawGrid(cr_grid, state)
-    cr.SetSourceSurface(grid, xoff, yoff)
-    cr.Paint ()
-    use cr_cur = new Context(cur)
-    DrawCursor(cr_cur, state)
-    cr.SetSourceSurface(cur, xoff, yoff)
-    cr.Paint ()
-    )
-
-  drawing.ButtonPressEvent.Add(fun args ->
-    let ev = args.Event
-    let (row, col) = fromMouseCoords(ev.X, ev.Y)
-    cursor.MoveTo(col, row)
-    window.QueueDraw ()
-    )
-
-  window.OnKeyPress <- (fun e ->
-    match e.Key with
-    | Gdk.Key.Up -> cursor.Move(Move_Up)
-    | Gdk.Key.Down -> cursor.Move(Move_Down)
-    | Gdk.Key.Left -> cursor.Move(Move_Left)
-    | Gdk.Key.Right -> cursor.Move(Move_Right)
-    | Gdk.Key.Tab -> cursor.FlipDir()
-    | Gdk.Key.space -> toggleBlack xw cursor
-    | Gdk.Key.BackSpace -> deleteLetter xw cursor true 
-    | Gdk.Key.Delete -> deleteLetter xw cursor false
-    | k when isAscii(k) -> setLetter xw cursor ((string k).ToUpper())
-    | _ -> Console.WriteLine(">> #{0}", e.Key)
-    window.QueueDraw ()
-    true
-    )
-    
-  window.Add(drawing)
+  let drawing = new XwordWidget(state)
+  let clues = new ClueWidget ()
+  let vbox = new Gtk.VBox(false, 1)
+  vbox.PackStart(drawing, true, true, 1u)
+  vbox.PackStart(clues, false, true, 1u)
+  window.Add(vbox)
   window.ShowAll()
   window.Show()
   Application.Run ()

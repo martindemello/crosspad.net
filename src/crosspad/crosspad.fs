@@ -6,7 +6,8 @@ let main argv =
   let cols = 15
 
   let grid = Array2D.create rows cols { cell = Empty; num = 0 }
-  let xw = { rows = rows; cols = cols; grid = grid }
+  let clues = { across = []; down = [] }
+  let xw = { rows = rows; cols = cols; grid = grid; clues = clues }
   let cursor = new Cursor(xw.cols - 1, xw.rows - 1)
   let state = { xword = xw; cursor = cursor }
 

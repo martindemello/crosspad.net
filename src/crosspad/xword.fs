@@ -7,10 +7,21 @@ type square = {
   num : int
 }
 
+type clue = {
+  answer : string
+  clue : string
+}
+
+type clues = {
+  across : clue list
+  down : clue list
+}
+
 type xword = {
-  rows : int;
-  cols : int;
-  grid : square [,];
+  rows : int
+  cols : int
+  grid : square [,]
+  clues : clues
 }
 
 type cursor_movement = 
