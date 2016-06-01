@@ -10,11 +10,12 @@ type square = {
 type clue = {
   answer : string
   clue : string
+  edited_clue : string
 }
 
 type clues = {
-  across : clue list
-  down : clue list
+  across : ResizeArray<clue>
+  down : ResizeArray<clue>
 }
 
 type xword = {
@@ -23,6 +24,11 @@ type xword = {
   grid : square [,]
   clues : clues
 }
+
+let make_xword(rows, cols) =
+  let grid = Array2D.create rows cols { cell = Empty; num = 0 }
+  let clues = { across = new ResizeArray<clue> (); down = new ResizeArray<clue> () }
+  { rows = rows; cols = cols; grid = grid; clues = clues }
 
 type cursor_movement =
   | Move_Left

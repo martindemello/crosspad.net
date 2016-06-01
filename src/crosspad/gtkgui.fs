@@ -114,6 +114,9 @@ let DrawXword(cr : Cairo.Context, state) =
   use target = cr.GetTarget ()
   use grid = target.CreateSimilar (Content.ColorAlpha, width, height)
   use cur = target.CreateSimilar (Content.ColorAlpha, width, height)
+  cr.SetSourceColor(white)
+  cr.Rectangle(0.0, 0.0, float(width), float(height))
+  cr.Fill()
   use cr_grid = new Context(grid)
   DrawGrid(cr_grid, state)
   cr.SetSourceSurface(grid, xoff, yoff)
@@ -124,30 +127,44 @@ let DrawXword(cr : Cairo.Context, state) =
   cr.Paint ()
 
 // Clues
-type ClueWidget() as this =
+type ClueWidget(clues: clues) as this =
   class
     inherit Gtk.VBox(true, 0)
 
+    let clues = clues
     let tree = new Gtk.TreeView()
-    let model = new Gtk.ListStore(typeof<string>, typeof<string>)
+    let model = new Gtk.ListStore(typeof<clue>)
     let clue_col = new Gtk.TreeViewColumn()
 
-    let make_column(title: string) =
+    let render_cell (fn : clue -> string)
+                    (column : Gtk.TreeViewColumn)
+                    (cell : Gtk.CellRenderer)
+                    (model : Gtk.ITreeModel)
+                    (iter : Gtk.TreeIter) =
+      let clue = model.GetValue (iter, 0) :?> clue
+      (cell :?> Gtk.CellRendererText).Text <- (fn clue)
+
+    let render_clue = render_cell (fun clue -> clue.clue)
+    let render_answer = render_cell (fun clue -> clue.answer)
+
+    let make_column(title, data_func) =
       let col = new Gtk.TreeViewColumn()
       let renderer = new Gtk.CellRendererText ()
       let index = tree.AppendColumn(col) - 1
       col.Title <- title
       col.PackStart (renderer, true);
-      col.AddAttribute (renderer, "text", index)
+      col.SetCellDataFunc (renderer, new Gtk.TreeCellDataFunc (data_func));
       col
 
     let init () =
-      let answer_col = make_column("Light")
-      let clue_col = make_column("Clue")
+      let answer_col = make_column("Light", render_answer)
+      let clue_col = make_column("Clue", render_clue)
+
+      for clue in clues.across do
+        model.AppendValues(clue) |> ignore
+
       tree.Model <- model
       this.PackStart(tree, true, true, 0u)
-      model.AppendValues("taliban", "42") |> ignore
-      model.AppendValues("foo", "bar") |> ignore
 
     do init ()
 
@@ -167,6 +184,10 @@ type XwordWidget(state) as this =
       this.CanFocus <- true
 
     do init ()
+
+    override this.OnGetPreferredHeight(min_height : byref<int>, natural_height : byref<int>) =
+      min_height <- 300
+      natural_height <- int(scale) * xw.cols + 20
 
     override this.OnDrawn(cr : Cairo.Context) =
       DrawXword(cr, state)
@@ -200,6 +221,17 @@ type XwordWidget(state) as this =
       true
   end
 
+// Clue entry
+type ClueEntryWidget () =
+  class
+    inherit Gtk.TextView ()
+
+    override this.OnGetPreferredHeight(min_height : byref<int>, natural_height : byref<int>) =
+      min_height <- 24
+      natural_height <- 50
+
+  end
+
 let Run (state) =
   Application.Init ()
 
@@ -211,9 +243,12 @@ let Run (state) =
     e.RetVal <- true)
 
   let drawing = new XwordWidget(state)
-  let clues = new ClueWidget ()
+  let clues = new ClueWidget (state.xword.clues)
+  let current_clue = new ClueEntryWidget ()
+  current_clue.Editable <- true
   let vbox = new Gtk.VBox(false, 1)
-  vbox.PackStart(drawing, true, true, 1u)
+  vbox.PackStart(drawing, false, true, 1u)
+  vbox.PackStart(current_clue, false, true, 5u)
   vbox.PackStart(clues, false, true, 1u)
   window.Add(vbox)
   window.ShowAll()
