@@ -1,6 +1,7 @@
 NUGET
   remote: https://www.nuget.org/api/v2
   specs:
+    BitSyntax (0.2)
     cairo (1.12.18)
       cairo.redist (>= 1.12.18)
       lpng (>= 1.6.16)
