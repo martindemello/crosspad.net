@@ -6,55 +6,57 @@ open System.Text
 open BitSyntax
 open Xword
 
+let encoding = System.Text.Encoding.GetEncoding("ISO-8859-1")
+
 (* extension read in from binary *)
 type extension = {
-  section: string;
-  length: int;
-  data: string;
-  checksum: int;
+  section: string
+  length: int
+  data: string
+  checksum: int
 }
 
 (* puzzle read in from binary *)
 type puzzle = {
-  preamble: string;
-  postscript: string;
-  title: string;
-  author: string;
-  copyright: string;
-  width: int;
-  height: int;
-  n_clues: int;
-  version: string;
-  scrambled_checksum: int;
-  fill: string;
-  solution: string;
-  clues: string list;
-  notes: string;
-  extensions: extension list;
-  puzzle_type: int;
-  solution_state: int;
-  scrambled_tag: int;
+  preamble: string
+  postscript: string
+  title: string
+  author: string
+  copyright: string
+  width: int
+  height: int
+  n_clues: int
+  version: string
+  scrambled_checksum: int
+  fill: string
+  solution: string
+  clues: string list
+  notes: string
+  extensions: extension list
+  puzzle_type: int
+  solution_state: int
+  scrambled_tag: int
 }
 
 let new_puzzle = {
-  preamble = "";
-  postscript = "";
-  title = "";
-  author = "";
-  copyright = "";
-  width = 0;
-  height = 0;
-  n_clues = 0;
-  version = "1.3";
-  scrambled_checksum = 0;
-  fill = "";
-  solution = "";
-  clues = [];
-  notes = "";
-  extensions = [];
-  puzzle_type = 1;
-  solution_state = 0;
-  scrambled_tag = 0;
+  preamble = ""
+  postscript = ""
+  title = ""
+  author = ""
+  copyright = ""
+  width = 0
+  height = 0
+  n_clues = 0
+  version = "1.3"
+  scrambled_checksum = 0
+  fill = ""
+  solution = ""
+  clues = []
+  notes = ""
+  extensions = []
+  puzzle_type = 1
+  solution_state = 0
+  scrambled_tag = 0
 }
 
 let read_string (sr : StreamReader) =
@@ -65,9 +67,7 @@ let read_string (sr : StreamReader) =
     | _ -> read sr (sb.Append (char c))
 
   let sb = new StringBuilder ()
-  let encoding = new System.Text.ASCIIEncoding ()
   let out = read sr sb
-  Console.WriteLine("Read string {0}", out)
   out
     
 let read_header (stream : Stream) start =
@@ -93,12 +93,36 @@ let read_header (stream : Stream) start =
        let! fill = BitReader.ReadString(n)
        return preamble, width, height, version, n_clues, solution, fill
     }
+  (* BitSyntax consumes too much of the stream, so we need to rewind to the
+   * end of the read portion *)
+  stream.Position <- int64(0x34 + 2 * width * height)
   { new_puzzle with
       preamble = preamble;
       width = width; height = height;
       version = version; n_clues = n_clues;
       solution = solution; fill = fill
   }
+
+let read_extension (stream : Stream) =
+  let pos = stream.Position
+  let section, length, checksum, data =
+    bitReader stream {
+      let! section = BitReader.ReadString(4)
+      let! length = BitReader.ReadInt32(numBits = 16)
+      let! checksum = BitReader.ReadInt32(numBits = 16)
+      let! data = BitReader.ReadString(length + 1)
+      return section, length, checksum, data
+    }
+  stream.Position <- pos + int64(8 + length + 1)
+  { data = data; section = section; length = length; checksum = checksum }
+
+let read_extensions (stream : Stream) =
+  let rec read stream out =
+    let ext = read_extension stream
+    match ext.length with
+    | 0 -> List.rev out
+    | _ -> read stream (ext :: out)
+  read stream []
 
 let cell_of_char c =
   match c with
@@ -126,14 +150,28 @@ let unpack_clues (xw : xword) (cs : string []) =
     xw
 
 let read (s : Stream) =
+  let sr = new StreamReader(s, encoding, false)
+
   let puz = read_header s 0
-  let encoding = System.Text.Encoding.GetEncoding("ISO-8859-1")
-  let sr = new StreamReader(s, encoding)
+
+  let stream = s
+  let pos = s.Position
   let title = read_string sr
   let author = read_string sr
   let copyright = read_string sr
-  System.Console.WriteLine(">> n_clues: {0}", puz.n_clues)
   let clues = Array.init puz.n_clues (fun i -> read_string sr)
+  let notes = read_string sr
+
+  // TODO: We should not be mixing reads from a StreamReader and an
+  // underlying Stream. Just slurp the file into a string and refactor
+  // all this hackery.
+  let s1 = List.map String.length [title; author; copyright; notes]
+  let s2 = List.map String.length (List.ofArray clues)
+  let s3 = (List.sum s1) + (List.sum s2) + (List.length s1) + (List.length s2)
+  s.Position <- pos + int64(s3)
+
+  let extensions = read_extensions s
+  Console.WriteLine("Extensions: {0}", List.map (fun x -> x.section) extensions)
     
   let xw = make_xword(puz.height, puz.width)
   unpack_solution xw puz.solution

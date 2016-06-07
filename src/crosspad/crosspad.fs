@@ -11,5 +11,5 @@ let main argv =
 
   renumber xw
 
-  GtkGui.Run(state)
+  //GtkGui.Run(state)
   0
