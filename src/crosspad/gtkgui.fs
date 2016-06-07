@@ -26,7 +26,7 @@ let fromMouseCoords(x, y) =
 // Cairo's ShowText places the origin at the bottom left
 let letterPos row col =
   let x, y = coords row col
-  x + 10.0, y + scale - 2.0
+  x + 10.0, y + scale - 5.0
 
 let numberPos row col =
   let x, y = coords row col
