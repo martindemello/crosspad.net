@@ -8,9 +8,9 @@ type square = {
 }
 
 type clue = {
-  answer : string
-  clue : string
-  edited_clue : string
+  mutable answer : string
+  mutable clue : string
+  mutable edited_clue : string
 }
 
 type clues = {

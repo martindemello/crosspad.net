@@ -153,8 +153,10 @@ type ClueWidget(clues: clues) as this =
       let index = tree.AppendColumn(col) - 1
       col.Title <- title
       col.PackStart (renderer, true);
-      col.SetCellDataFunc (renderer, new Gtk.TreeCellDataFunc (data_func));
+      col.SetCellDataFunc (renderer, new Gtk.TreeCellDataFunc (data_func))
       col
+
+    let mutable on_change_fn = fun clue -> true
 
     let init () =
       let answer_col = make_column("Light", render_answer)
@@ -163,10 +165,26 @@ type ClueWidget(clues: clues) as this =
       for clue in clues.across do
         model.AppendValues(clue) |> ignore
 
+      tree.CursorChanged.Add(fun (e : EventArgs) ->
+          let selection = tree.Selection
+          let mutable iter = new TreeIter ()
+          if selection.GetSelected(&iter) then
+            let clue = model.GetValue(iter, 0) :?> clue
+            Console.WriteLine("{0} : {1}", clue.answer, clue.clue)
+            on_change_fn clue |> ignore
+          )
+
       tree.Model <- model
       this.PackStart(tree, true, true, 0u)
 
     do init ()
+
+    member this.OnChange
+      with public get() = on_change_fn
+      and public set fn = on_change_fn <- fn
+
+    member this.Refresh () =
+      tree.QueueDraw()
 
   end
 
@@ -187,7 +205,11 @@ type XwordWidget(state) as this =
 
     override this.OnGetPreferredHeight(min_height : byref<int>, natural_height : byref<int>) =
       min_height <- 300
-      natural_height <- int(scale) * xw.cols + 20
+      natural_height <- int(scale) * xw.rows + 20
+
+    override this.OnGetPreferredWidth(min_width : byref<int>, natural_width : byref<int>) =
+      min_width <- 300
+      natural_width <- int(scale) * xw.cols + 20
 
     override this.OnDrawn(cr : Cairo.Context) =
       DrawXword(cr, state)
@@ -222,14 +244,27 @@ type XwordWidget(state) as this =
   end
 
 // Clue entry
-type ClueEntryWidget () =
+type ClueEntryWidget () as this =
   class
     inherit Gtk.TextView ()
+
+    let mutable clue = {answer = ""; clue = ""; edited_clue = ""}
+
+    let init () =
+      this.Buffer.Changed.Add(fun e -> clue.edited_clue <- this.Buffer.Text)
+
+    do init ()
 
     override this.OnGetPreferredHeight(min_height : byref<int>, natural_height : byref<int>) =
       min_height <- 24
       natural_height <- 50
 
+    member this.Clue
+      with public get() = clue
+      and public set clue' = clue <- clue'
+
+    member this.Update () =
+      this.Buffer.Text <- clue.edited_clue
   end
 
 let Run (state) =
@@ -242,14 +277,31 @@ let Run (state) =
     Application.Quit()
     e.RetVal <- true)
 
-  let drawing = new XwordWidget(state)
-  let clues = new ClueWidget (state.xword.clues)
+  let grid = new XwordWidget(state)
+  let clues = new ClueWidget(state.xword.clues)
   let current_clue = new ClueEntryWidget ()
+  let commit_clue = new Gtk.Button("Save")
+  let cc_box = new Gtk.HBox(false, 1)
+  cc_box.PackStart(current_clue, true, true, 1u)
+  cc_box.PackStart(commit_clue, false, true, 1u)
+
+  clues.OnChange <- (fun clue ->
+    current_clue.Clue <- clue
+    current_clue.Update ()
+    false
+    )
+
   current_clue.Editable <- true
+  commit_clue.Clicked.Add(fun e ->
+    current_clue.Clue.clue <- current_clue.Clue.edited_clue
+    clues.Refresh()
+    )
+  let hbox = new Gtk.HBox(false, 1)
   let vbox = new Gtk.VBox(false, 1)
-  vbox.PackStart(drawing, false, true, 1u)
-  vbox.PackStart(current_clue, false, true, 5u)
-  vbox.PackStart(clues, false, true, 1u)
+  hbox.PackStart(grid, false, true, 1u)
+  hbox.PackStart(clues, true, true, 1u)
+  vbox.PackStart(hbox, false, true, 1u)
+  vbox.PackStart(cc_box, false, true, 1u)
   window.Add(vbox)
   window.ShowAll()
   window.Show()
