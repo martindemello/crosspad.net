@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="xword.fs" />
+    <Compile Include="puz.fs" />
     <Compile Include="etogui.fs" />
     <Compile Include="gtkgui.fs" />
     <Compile Include="crosspad.fs" />

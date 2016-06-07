@@ -146,15 +146,15 @@ let setNum xw x y n =
     { xw.grid.[y, x] with num = n }
 
 let renumberWithCallbacks on_ac on_dn xw =
-  let n = ref 1 in
+  let mutable n = 1 in
   for y = 0 to xw.rows - 1 do
     for x = 0 to xw.cols - 1 do
       let a, d = startAcross xw x y, startDown xw x y in
-      if a then on_ac !n
-      if d then on_dn !n
+      if a then on_ac n
+      if d then on_dn n
       if (a || d) then begin
-        setNum xw x y !n
-        n := !n + 1
+        setNum xw x y n
+        n <- n + 1
       end
       else
         setNum xw x y 0

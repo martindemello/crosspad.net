@@ -1,16 +1,13 @@
 open Xword
 
+open System.IO
+
 [<EntryPoint>]
 let main argv =
-  let rows = 15
-  let cols = 15
-
-  let xw = make_xword(rows, cols)
+  let stream = File.OpenRead("test.puz")
+  let xw = Puz.read stream
   let cursor = new Cursor(xw.cols - 1, xw.rows - 1)
   let state = { xword = xw; cursor = cursor }
-
-  xw.clues.across.Add({answer = "foo"; clue = "bar"; edited_clue = "hello"})
-  xw.clues.across.Add({answer = "baz"; clue = "quux"; edited_clue = "world"})
 
   renumber xw
 
