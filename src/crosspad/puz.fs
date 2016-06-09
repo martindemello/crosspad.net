@@ -142,11 +142,11 @@ let unpack_solution xw (s : string) =
 let unpack_clues (xw : xword) (cs : string []) =
   let ac = xw.clues.across
   let dn = xw.clues.down
-  let make_clue s = { answer = ""; clue = s; edited_clue = s }
+  let make_clue (l : light) s = { light = l; clue = s; edited_clue = s }
   let mutable i = 0
   Xword.renumberWithCallbacks
-    (fun n -> ac.Add(make_clue cs.[i]); i <- i + 1)
-    (fun n -> dn.Add(make_clue cs.[i]); i <- i + 1)
+    (fun light -> ac.Add(make_clue light cs.[i]); i <- i + 1)
+    (fun light -> dn.Add(make_clue light cs.[i]); i <- i + 1)
     xw
 
 let read (s : Stream) =

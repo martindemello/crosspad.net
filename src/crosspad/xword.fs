@@ -2,15 +2,31 @@ module Xword
 
 type cell = Black | Empty | Letter of string
 
+type direction = Across | Down
+
 type square = {
   cell : cell
   num : int
 }
 
+type light = {
+  x : int
+  y : int
+  dir : direction
+  num : int
+  word : string
+}
+
 type clue = {
-  mutable answer : string
+  mutable light : light
   mutable clue : string
   mutable edited_clue : string
+}
+
+let empty_clue = {
+  light = { x = 1; y = 1; dir = Across; num = 1; word = "" }
+  clue = ""
+  edited_clue = ""
 }
 
 type clues = {
@@ -18,14 +34,23 @@ type clues = {
   down : ResizeArray<clue>
 }
 
-type direction = Across | Down
-
 type xword = {
   rows : int
   cols : int
   grid : square [,]
   clues : clues
 }
+
+let letter_of_cell = function
+  | Black -> "#"
+  | Empty -> "."
+  | Letter c -> c
+
+let string_of_dir = function
+  | Across -> "A" | Down -> "D"
+
+let string_of_clue clue =
+  sprintf "%d%s. %s" clue.light.num (string_of_dir clue.light.dir) clue.clue
 
 let make_xword(rows, cols) =
   let grid = Array2D.create rows cols { cell = Empty; num = 0 }
@@ -141,6 +166,25 @@ let startDown xw x y =
   (nonBoundary xw x y) &&
   (nonBoundary xw x (y + 1))
 
+let readWord xw x y dx dy =
+  let rec read x y acc =
+    if boundary xw x y then
+      String.concat "" (List.rev acc)
+    else
+      let c = letter_of_cell xw.grid.[y, x].cell
+      read (x + dx) (y + dy) (c :: acc)
+  read x y []
+
+let wordAcross xw x y =
+  match startAcross xw x y with
+  | true -> Some (readWord xw x y 1 0)
+  | false -> None
+
+let wordDown xw x y =
+  match startDown xw x y with
+  | true -> Some (readWord xw x y 0 1)
+  | false -> None
+
 let setNum xw x y n =
   xw.grid.[y, x] <-
     { xw.grid.[y, x] with num = n }
@@ -149,10 +193,10 @@ let renumberWithCallbacks on_ac on_dn xw =
   let mutable n = 1 in
   for y = 0 to xw.rows - 1 do
     for x = 0 to xw.cols - 1 do
-      let a, d = startAcross xw x y, startDown xw x y in
-      if a then on_ac n
-      if d then on_dn n
-      if (a || d) then begin
+      let a, d = wordAcross xw x y, wordDown xw x y
+      Option.iter (fun w -> on_ac {x = x; y = y; num = n; word = w; dir = Across}) a
+      Option.iter (fun w -> on_dn {x = x; y = y; num = n; word = w; dir = Down}) d
+      if (a.IsSome || d.IsSome) then begin
         setNum xw x y n
         n <- n + 1
       end

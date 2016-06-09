@@ -134,7 +134,6 @@ type ClueWidget(clues: clues, dir : direction) as this =
     let clues = clues
     let tree = new Gtk.TreeView()
     let model = new Gtk.ListStore(typeof<clue>)
-    let clue_col = new Gtk.TreeViewColumn()
 
     let render_cell (fn : clue -> string)
                     (column : Gtk.TreeViewColumn)
@@ -144,8 +143,9 @@ type ClueWidget(clues: clues, dir : direction) as this =
       let clue = model.GetValue (iter, 0) :?> clue
       (cell :?> Gtk.CellRendererText).Text <- (fn clue)
 
+    let render_num = render_cell (fun clue -> string clue.light.num)
     let render_clue = render_cell (fun clue -> clue.clue)
-    let render_answer = render_cell (fun clue -> clue.answer)
+    let render_answer = render_cell (fun clue -> clue.light.word)
 
     let make_column(title, data_func) =
       let col = new Gtk.TreeViewColumn()
@@ -159,6 +159,7 @@ type ClueWidget(clues: clues, dir : direction) as this =
     let mutable on_change_fn = fun clue -> true
 
     let init () =
+      let num_col =  make_column("", render_num)
       let answer_col = make_column("Light", render_answer)
       let clue_col = make_column("Clue", render_clue)
 
@@ -280,14 +281,14 @@ type FatTextView () =
 
     override this.OnGetPreferredHeight(min_height : byref<int>, natural_height : byref<int>) =
       min_height <- 24
-      natural_height <- 50
+      natural_height <- 32
   end
 
 type CurrentClueWidget () as this =
   class
     inherit Gtk.VBox ()
 
-    let mutable clue = {answer = ""; clue = ""; edited_clue = ""}
+    let mutable clue = empty_clue
 
     let current = new FatTextView ()
     let edited = new FatTextView ()
@@ -296,6 +297,15 @@ type CurrentClueWidget () as this =
       this.PackStart(current, true, true, 1u)
       this.PackStart(edited, true, true, 1u)
       current.Editable <- false
+      current.CanFocus <- false
+      // WTF: Is there really no Gdk.RGBA constructor? No docs either!
+      let mutable color = Gdk.RGBA ()
+      color.Red <- 1.0
+      color.Green <- 1.0
+      color.Blue <- 0.8
+      color.Alpha <- 1.0
+      current.OverrideBackgroundColor(StateFlags.Normal, color)
+
       edited.Editable <- true
       edited.Buffer.Changed.Add(fun e ->
           clue.edited_clue <- edited.Buffer.Text)
@@ -307,7 +317,7 @@ type CurrentClueWidget () as this =
       and public set clue' = clue <- clue'
 
     member this.Update () =
-      current.Buffer.Text <- clue.clue
+      current.Buffer.Text <- string_of_clue clue
       edited.Buffer.Text <- clue.edited_clue
   end
 
