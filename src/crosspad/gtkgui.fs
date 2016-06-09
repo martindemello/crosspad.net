@@ -175,7 +175,6 @@ type ClueWidget(clues: clues, dir : direction) as this =
           let mutable iter = new TreeIter ()
           if selection.GetSelected(&iter) then
             let clue = model.GetValue(iter, 0) :?> clue
-            Console.WriteLine("{0} : {1}", clue.answer, clue.clue)
             on_change_fn clue |> ignore
           )
 
@@ -275,27 +274,41 @@ type XwordWidget(state) as this =
   end
 
 // Clue entry
-type ClueEntryWidget () as this =
+type FatTextView () =
   class
     inherit Gtk.TextView ()
-
-    let mutable clue = {answer = ""; clue = ""; edited_clue = ""}
-
-    let init () =
-      this.Buffer.Changed.Add(fun e -> clue.edited_clue <- this.Buffer.Text)
-
-    do init ()
 
     override this.OnGetPreferredHeight(min_height : byref<int>, natural_height : byref<int>) =
       min_height <- 24
       natural_height <- 50
+  end
+
+type CurrentClueWidget () as this =
+  class
+    inherit Gtk.VBox ()
+
+    let mutable clue = {answer = ""; clue = ""; edited_clue = ""}
+
+    let current = new FatTextView ()
+    let edited = new FatTextView ()
+
+    let init () =
+      this.PackStart(current, true, true, 1u)
+      this.PackStart(edited, true, true, 1u)
+      current.Editable <- false
+      edited.Editable <- true
+      edited.Buffer.Changed.Add(fun e ->
+          clue.edited_clue <- edited.Buffer.Text)
+
+    do init ()
 
     member this.Clue
       with public get() = clue
       and public set clue' = clue <- clue'
 
     member this.Update () =
-      this.Buffer.Text <- clue.edited_clue
+      current.Buffer.Text <- clue.clue
+      edited.Buffer.Text <- clue.edited_clue
   end
 
 let Run (state) =
@@ -310,7 +323,7 @@ let Run (state) =
 
   let grid = new XwordWidget(state)
   let clues = new CluesWidget(state.xword.clues)
-  let current_clue = new ClueEntryWidget ()
+  let current_clue = new CurrentClueWidget ()
   let commit_clue = new Gtk.Button("Save")
   let cc_box = new Gtk.HBox(false, 1)
   cc_box.PackStart(current_clue, true, true, 1u)
@@ -327,11 +340,13 @@ let Run (state) =
   clues.Across.OnChange <- change_clue
   clues.Down.OnChange <- change_clue
 
-  current_clue.Editable <- true
   commit_clue.Clicked.Add(fun e ->
-    current_clue.Clue.clue <- current_clue.Clue.edited_clue
-    clues.Refresh()
+    let clue = current_clue.Clue
+    clue.clue <- clue.edited_clue
+    current_clue.Update ()
+    clues.Refresh ()
     )
+
   let hbox = new Gtk.HBox(false, 1)
   let vbox = new Gtk.VBox(false, 1)
   hbox.PackStart(grid, false, true, 1u)
