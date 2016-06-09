@@ -18,6 +18,8 @@ type clues = {
   down : ResizeArray<clue>
 }
 
+type direction = Across | Down
+
 type xword = {
   rows : int
   cols : int
@@ -36,8 +38,6 @@ type cursor_movement =
   | Move_Up
   | Move_Down
   | Move_Across
-
-type cursor_direction = Across | Down
 
 type Cursor(xmax: int, ymax: int) =
   let xmax = xmax

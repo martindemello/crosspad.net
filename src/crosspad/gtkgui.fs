@@ -127,9 +127,9 @@ let DrawXword(cr : Cairo.Context, state) =
   cr.Paint ()
 
 // Clues
-type ClueWidget(clues: clues) as this =
+type ClueWidget(clues: clues, dir : direction) as this =
   class
-    inherit Gtk.VBox(true, 0)
+    inherit Gtk.ScrolledWindow ()
 
     let clues = clues
     let tree = new Gtk.TreeView()
@@ -162,7 +162,12 @@ type ClueWidget(clues: clues) as this =
       let answer_col = make_column("Light", render_answer)
       let clue_col = make_column("Clue", render_clue)
 
-      for clue in clues.across do
+      let clue_list =
+        match dir with
+        | Across -> clues.across
+        | Down -> clues.down
+
+      for clue in clue_list do
         model.AppendValues(clue) |> ignore
 
       tree.CursorChanged.Add(fun (e : EventArgs) ->
@@ -175,7 +180,7 @@ type ClueWidget(clues: clues) as this =
           )
 
       tree.Model <- model
-      this.PackStart(tree, true, true, 0u)
+      this.Add(tree)
 
     do init ()
 
@@ -185,6 +190,32 @@ type ClueWidget(clues: clues) as this =
 
     member this.Refresh () =
       tree.QueueDraw()
+
+  end
+
+type CluesWidget(clues: clues) as this =
+  class
+    inherit Gtk.VBox ()
+
+    let clues = clues
+    let clues_ac = new ClueWidget (clues, Across)
+    let clues_dn = new ClueWidget (clues, Down)
+
+    let init () =
+      this.PackStart(clues_ac, true, true, 1u)
+      this.PackStart(clues_dn, true, true, 1u)
+
+    do init ()
+
+    member this.Across
+      with public get() = clues_ac
+
+    member this.Down
+      with public get() = clues_dn
+
+    member this.Refresh () =
+      clues_ac.Refresh ()
+      clues_dn.Refresh ()
 
   end
 
@@ -278,18 +309,23 @@ let Run (state) =
     e.RetVal <- true)
 
   let grid = new XwordWidget(state)
-  let clues = new ClueWidget(state.xword.clues)
+  let clues = new CluesWidget(state.xword.clues)
   let current_clue = new ClueEntryWidget ()
   let commit_clue = new Gtk.Button("Save")
   let cc_box = new Gtk.HBox(false, 1)
   cc_box.PackStart(current_clue, true, true, 1u)
   cc_box.PackStart(commit_clue, false, true, 1u)
 
-  clues.OnChange <- (fun clue ->
+  // When selecting a clue in the clue widget, make it the current clue in the
+  // edit box
+  let change_clue = (fun clue ->
     current_clue.Clue <- clue
     current_clue.Update ()
     false
     )
+
+  clues.Across.OnChange <- change_clue
+  clues.Down.OnChange <- change_clue
 
   current_clue.Editable <- true
   commit_clue.Clicked.Add(fun e ->
