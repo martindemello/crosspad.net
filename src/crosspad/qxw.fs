@@ -83,6 +83,31 @@ let read_gp (s : LineScanner) =
   if unbox<int>(gtype) <> 0 then failwith "Only square grids are supported"
   (unbox<int> height, unbox<int> width)
 
+let cell_of_char c =
+  match c with
+  | '.' -> Black
+  | ' ' -> Empty
+  | c  -> Letter (string c)
+
+let unpack_solution xw sq =
+  for (x, y, _, _, f, c) in sq do
+    let x = unbox<int> x
+    let y = unbox<int> y
+    let f = unbox<int> f
+    let c = unbox<char> c
+    let cell = match f with 0 -> cell_of_char c | _ -> Black
+    Xword.setCell xw x y cell
+
+let populate_clues xw =
+  let ac = xw.clues.across
+  let dn = xw.clues.down
+  let make_clue (l : light) s = { light = l; clue = s; edited_clue = s }
+  let mutable i = 0
+  Xword.renumberWithCallbacks
+    (fun light -> ac.Add(make_clue light ""); i <- i + 1)
+    (fun light -> dn.Add(make_clue light ""); i <- i + 1)
+    xw
+
 let read (stream : Stream) =
   let s = new LineScanner(stream)
   try
@@ -107,6 +132,11 @@ let read (stream : Stream) =
     let _ = s.ScanWhile "VLP %d %d %d %d %d %d"
     let sqct = s.ScanWhile "SQCT %d %d %d %s"
     Console.WriteLine("{0}", (h, w, title))
+    let xw = make_xword(h, w)
+    unpack_solution xw sq
+    populate_clues xw
+    xw
   with
   | ScanfFailure (a, b) ->
       Console.WriteLine("Could not match '{0}' with '{1}'", a, b)
+      fail ()

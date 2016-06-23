@@ -8,8 +8,8 @@ let qxw_main argv =
   0
 
 let gui_main argv =
-  let stream = File.OpenRead("test.puz")
-  let xw = Puz.read stream
+  let stream = File.OpenRead("1ac.qxw")
+  let xw = Qxw.read stream
   let cursor = new Cursor(xw.cols - 1, xw.rows - 1)
   let state = { xword = xw; cursor = cursor }
 
@@ -20,4 +20,4 @@ let gui_main argv =
 
 [<EntryPoint>]
 let main argv =
-  qxw_main argv
+  gui_main argv
