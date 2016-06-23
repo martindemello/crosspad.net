@@ -147,6 +147,12 @@ type state = {
 // numbering
 // this section uses (x, y) coordinates for convenience.
 
+let getNum xw x y = xw.grid.[y, x].num
+
+let setNum xw x y n =
+  xw.grid.[y, x] <-
+    { xw.grid.[y, x] with num = n }
+
 let isBlack xw x y = xw.grid.[y, x].cell = Black
 
 let boundary xw x y =
@@ -185,9 +191,12 @@ let wordDown xw x y =
   | true -> Some (readWord xw x y 0 1)
   | false -> None
 
-let setNum xw x y n =
-  xw.grid.[y, x] <-
-    { xw.grid.[y, x] with num = n }
+let getWord = function Across -> wordAcross | Down -> wordDown
+
+let getLight xw x y dir =
+  let w = getWord dir xw x y
+  let n = getNum xw x y
+  Option.map (fun w -> {x = x; y = y; num = n; word = w; dir = dir}) w
 
 let renumberWithCallbacks on_ac on_dn xw =
   let mutable n = 1 in

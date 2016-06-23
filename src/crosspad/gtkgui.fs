@@ -159,9 +159,10 @@ type ClueWidget(clues: clues, dir : direction) as this =
     let mutable on_change_fn = fun clue -> true
 
     let init () =
+      let title = match dir with Across -> "Across" | Down -> "Down"
       let num_col =  make_column("", render_num)
-      let answer_col = make_column("Light", render_answer)
-      let clue_col = make_column("Clue", render_clue)
+      let answer_col = make_column("", render_answer)
+      let clue_col = make_column(title, render_clue)
 
       let clue_list =
         match dir with
@@ -227,12 +228,17 @@ type XwordWidget(state) as this =
     let state = state
     let xw = state.xword
     let cursor = state.cursor
+    let mutable on_change_fn = fun cursor -> ()
 
     let init () =
       this.AddEvents(int(Gdk.EventMask.ButtonPressMask))
       this.CanFocus <- true
 
     do init ()
+
+    member this.OnChange
+      with public get() = on_change_fn
+      and public set fn = on_change_fn <- fn
 
     override this.OnGetPreferredHeight(min_height : byref<int>, natural_height : byref<int>) =
       min_height <- 300
@@ -261,6 +267,7 @@ type XwordWidget(state) as this =
       | _ -> Console.WriteLine(">> #{0}", e.Key); handled <- false
 
       if handled then
+        on_change_fn cursor
         this.QueueDraw()
         true
       else
@@ -341,14 +348,20 @@ let Run (state) =
 
   // When selecting a clue in the clue widget, make it the current clue in the
   // edit box
-  let change_clue = (fun clue ->
+  let on_change_clue = (fun clue ->
     current_clue.Clue <- clue
     current_clue.Update ()
     false
     )
 
-  clues.Across.OnChange <- change_clue
-  clues.Down.OnChange <- change_clue
+  let on_change_cell () =
+    let x, y, dir = state.cursor.X, state.cursor.Y, state.cursor.Dir
+    match getLight state.xword x y dir with
+    | Some w -> Console.WriteLine("{0}, {1}, {2}", w.x, w.y, string_of_dir w.dir) 
+    | None -> ()
+
+  clues.Across.OnChange <- on_change_clue
+  clues.Down.OnChange <- on_change_clue
 
   commit_clue.Clicked.Add(fun e ->
     let clue = current_clue.Clue
