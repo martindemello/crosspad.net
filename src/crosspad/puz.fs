@@ -3,18 +3,37 @@ module Puz
 open System
 open System.IO
 open System.Text
+open System.Text.RegularExpressions
 open BitSyntax
 open Xword
 
 let encoding = System.Text.Encoding.GetEncoding("ISO-8859-1")
 
 (* extension read in from binary *)
+
+exception PuzzleFormatError of string
+
 type extension = {
   section: string
   length: int
   data: string
   checksum: int
 }
+
+type rtbl = {
+  key : int
+  value : string
+}
+
+type ltim = int * int
+
+type grbs = string
+
+type gext = string
+
+let fail_read (ex : extension) =
+  let msg = sprintf "Could not read extension %s" ex.section
+  raise (PuzzleFormatError msg)
 
 (* puzzle read in from binary *)
 type puzzle = {
@@ -103,6 +122,53 @@ let read_header (stream : Stream) start =
       solution = solution; fill = fill
   }
 
+type section = RTBL of rtbl list | GRBS of grbs | GEXT of gext | LTIM of ltim
+
+let parse_rtbl data =
+  let all = new Regex("^(?:\d{1,2}:\w+;)+$")
+  let entry = new Regex("(\d{1,2}):(\w+);")
+  let parse(k, v) = { key = System.Int32.Parse(k); value = v }
+  if all.IsMatch(data) then
+    let m = entry.Matches(data)
+    let entries = [for i in m -> (i.Groups.[1].Value, i.Groups.[2].Value)]
+    Some (List.map parse entries)
+  else
+    None
+
+let parse_ltim data =
+  let all = new Regex("^\d+,\d+\000$")
+  let entry = new Regex("(\d+),(\d+)")
+  let parse (m : Match) (i : int) = System.Int32.Parse(m.Groups.[i].Value)
+  if all.IsMatch(data) then
+    let m = entry.Match(data)
+    Some (parse m 1, parse m 2)
+  else
+    None
+
+let parse_extension puz ex =
+  let n_cells = puz.width * puz.height
+  let last s = String.length s - 1
+  let is_byte_grid s = (last s = n_cells) && (s.[n_cells] = '\000')
+  let drop_last (s : string) = s.[0 .. (last s) - 1]
+  match ex.section with
+  | "RTBL" ->
+     match (parse_rtbl ex.data) with
+     | None -> fail_read ex
+     | Some xs -> RTBL xs
+  | "GRBS" ->
+     match is_byte_grid ex.data with
+     | false -> fail_read ex
+     | true -> GRBS ex.data
+  | "GEXT" ->
+     match is_byte_grid ex.data with
+     | false -> fail_read ex
+     | true -> GEXT ex.data
+  | "LTIM" ->
+     match (parse_ltim ex.data) with
+     | None -> fail_read ex
+     | Some (x, y) -> LTIM (x, y)
+  |_ -> fail_read ex
+
 let read_extension (stream : Stream) =
   let pos = stream.Position
   let section, length, checksum, data =
@@ -172,7 +238,7 @@ let read (s : Stream) =
 
   let extensions = read_extensions s
   Console.WriteLine("Extensions: {0}", List.map (fun x -> x.section) extensions)
-    
+
   let xw = make_xword(puz.height, puz.width)
   unpack_solution xw puz.solution
   unpack_clues xw clues |> ignore
