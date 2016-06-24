@@ -4,10 +4,20 @@ type cell = Black | Empty | Letter of string
 
 type direction = Across | Down
 
+type bars = {
+  right : bool
+  down : bool
+}
+
+let empty_bars = { right = false; down = false }
+
 type square = {
   cell : cell
+  bars : bars
   num : int
 }
+
+let empty_square = { cell = Empty; bars = empty_bars; num = 0 }
 
 type light = {
   x : int
@@ -34,6 +44,11 @@ type clues = {
   down : ResizeArray<clue>
 }
 
+let make_clues () = {
+    across = new ResizeArray<clue> ()
+    down = new ResizeArray<clue> ()
+  }
+
 type xword = {
   rows : int
   cols : int
@@ -53,8 +68,8 @@ let string_of_clue clue =
   sprintf "%d%s. %s" clue.light.num (string_of_dir clue.light.dir) clue.clue
 
 let make_xword(rows, cols) =
-  let grid = Array2D.create rows cols { cell = Empty; num = 0 }
-  let clues = { across = new ResizeArray<clue> (); down = new ResizeArray<clue> () }
+  let grid = Array2D.create rows cols empty_square
+  let clues = make_clues ()
   { rows = rows; cols = cols; grid = grid; clues = clues }
 
 type cursor_movement =
