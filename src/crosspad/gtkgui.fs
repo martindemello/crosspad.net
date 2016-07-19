@@ -338,6 +338,18 @@ let Run (state) =
     Application.Quit()
     e.RetVal <- true)
 
+  let mb = new MenuBar ()
+  let file_menu = new Menu ()
+  let exit_item = new MenuItem("Exit")
+  exit_item.Activated.Add(fun e ->
+      window.Hide()
+      Application.Quit())
+
+  file_menu.Append(exit_item)
+  let file_item = new MenuItem("File")
+  file_item.Submenu <- file_menu
+  mb.Append (file_item)
+
   let grid = new XwordWidget(state)
   let clues = new CluesWidget(state.xword.clues)
   let current_clue = new CurrentClueWidget ()
@@ -357,7 +369,7 @@ let Run (state) =
   let on_change_cell () =
     let x, y, dir = state.cursor.X, state.cursor.Y, state.cursor.Dir
     match getLight state.xword x y dir with
-    | Some w -> Console.WriteLine("{0}, {1}, {2}", w.x, w.y, string_of_dir w.dir) 
+    | Some w -> Console.WriteLine("{0}, {1}, {2}", w.x, w.y, string_of_dir w.dir)
     | None -> ()
 
   clues.Across.OnChange <- on_change_clue
@@ -370,12 +382,21 @@ let Run (state) =
     clues.Refresh ()
     )
 
+  let frame = new Frame ()
+  frame.ShadowType <- ShadowType.EtchedIn
+  let sb = new Statusbar ()
+  let _ = sb.Push (1u, "Welcome!")
+  frame.Add(sb)
+
   let hbox = new Gtk.HBox(false, 1)
   let vbox = new Gtk.VBox(false, 1)
   hbox.PackStart(grid, false, true, 1u)
   hbox.PackStart(clues, true, true, 1u)
+  vbox.PackStart(mb, false, false, 1u)
   vbox.PackStart(hbox, false, true, 1u)
   vbox.PackStart(cc_box, false, true, 1u)
+  vbox.PackEnd(frame, false, true, 1u)
+  window.HasResizeGrip <- true
   window.Add(vbox)
   window.ShowAll()
   window.Show()

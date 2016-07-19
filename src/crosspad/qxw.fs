@@ -96,6 +96,7 @@ let unpack_solution xw sq =
     let f = unbox<int> f
     let c = unbox<char> c
     let cell = match f with 0 -> cell_of_char c | _ -> Black
+    check (x >= 0 && x < xw.cols && y >= 0 && y < xw.rows)
     Xword.setCell xw x y cell
 
 let populate_clues xw =
